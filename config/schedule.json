@@ -1,0 +1,32 @@
+{
+  "timezone": "Asia/Kolkata",
+  "jobs": {
+    "morning_discovery": {
+      "enabled": true,
+      "hour": 9,
+      "minute": 0,
+      "description": "Morning job discovery (9 AM IST)"
+    },
+    "evening_discovery": {
+      "enabled": true,
+      "hour": 18,
+      "minute": 0,
+      "description": "Evening job discovery (6 PM IST)"
+    },
+    "daily_summary": {
+      "enabled": true,
+      "hour": 21,
+      "minute": 0,
+      "description": "Daily summary (9 PM IST)"
+    },
+    "weekly_report": {
+      "enabled": true,
+      "day_of_week": "mon",
+      "hour": 10,
+      "minute": 0,
+      "description": "Weekly application report"
+    }
+  },
+  "min_minutes_between_source_requests": 20,
+  "max_jobs_per_run": 80
+}

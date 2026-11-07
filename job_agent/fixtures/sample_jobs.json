@@ -1,0 +1,54 @@
+[
+  {
+    "source": "sample",
+    "title": "Junior Data Engineer",
+    "company": "Sample Analytics Pvt Ltd",
+    "location": "Bengaluru, India",
+    "salary": "Not published",
+    "experience": "0-1 years",
+    "description": "Fresher-friendly Junior Data Engineer role. Work with Python, SQL, Pandas and ETL pipelines. Excel and Power BI are useful. AWS or Azure exposure is a plus. Git required.",
+    "required_skills": ["Python", "SQL", "Pandas", "ETL", "Git"],
+    "posted_at": "2026-11-06",
+    "deadline": "2026-11-30",
+    "apply_url": "https://example.com/jobs/junior-data-engineer"
+  },
+  {
+    "source": "sample",
+    "title": "Associate Software Engineer",
+    "company": "Sample Software Labs",
+    "location": "Hyderabad, India",
+    "salary": null,
+    "experience": "Fresher / graduate trainee",
+    "description": "Associate Software Engineer for 2026-2027 graduates. Python, Git, Linux and Docker. SQL is helpful. Training provided for entry-level candidates.",
+    "required_skills": ["Python", "Git", "Linux", "Docker"],
+    "posted_at": "2026-11-05",
+    "deadline": null,
+    "apply_url": "https://example.com/jobs/associate-software-engineer"
+  },
+  {
+    "source": "sample",
+    "title": "Data Analyst Intern",
+    "company": "Sample Insights",
+    "location": "Remote, India",
+    "salary": null,
+    "experience": "Fresher",
+    "description": "Entry-level Data Analyst intern. Excel, SQL, Power BI, Python and NumPy/Pandas. Scikit-learn is optional.",
+    "required_skills": ["Excel", "SQL", "Power BI", "Python"],
+    "posted_at": "2026-11-07",
+    "deadline": "2026-12-15",
+    "apply_url": "https://example.com/jobs/data-analyst-intern"
+  },
+  {
+    "source": "sample",
+    "title": "Staff Machine Learning Engineer",
+    "company": "Sample DeepTech",
+    "location": "United States",
+    "salary": "$180,000",
+    "experience": "8+ years",
+    "description": "Staff ML Engineer requiring 8+ years of production ML, Kubernetes, Java, and on-site US work authorization. Not a fresher role.",
+    "required_skills": ["Java", "Kubernetes", "MLOps", "US work authorization"],
+    "posted_at": "2026-11-01",
+    "deadline": null,
+    "apply_url": "https://example.com/jobs/staff-ml-engineer"
+  }
+]

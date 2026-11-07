@@ -1,0 +1,42 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
+# Temporary and local browser data
+browser-data/
+*.har
+*.zip
+agent_history.gif
+*.gif
+
+# Sensitive session / storage files
+**/storage_state.json
+**/*cookies*.json
+**/*session*.json
+*.pem
+*.key
+
+# Job-hunting local data
+data/*.db
+data/*.db-wal
+data/*.db-shm
+data/*.pid
+data/*.lock
+resumes/tailored/
+reports/*.md
+reports/*.txt
+reports/*.html
+
+# Logs and editor junk
+*.log
+.browser-use/
+debug.log
+info.log
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
