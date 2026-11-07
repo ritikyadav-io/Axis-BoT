@@ -452,9 +452,9 @@ This project is distributed under the MIT License. See the `LICENSE` file for de
 
 B.Tech — Artificial Intelligence and Data Science
 
-GitHub: https://github.com/YOUR_USERNAME
+GitHub: https://github.com/ritikyadav.io
 
-LinkedIn: https://www.linkedin.com/in/YOUR_LINKEDIN_USERNAME/
+LinkedIn: https://www.linkedin.com/in/ritikyadav18
 
 ---
 
