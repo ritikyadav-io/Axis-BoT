@@ -2,45 +2,45 @@ from __future__ import annotations
 
 import re
 
-SENSITIVE_PATTERNS = (
-    r"\bbuy\b",
-    r"\bpurchase\b",
-    r"\bpay(ment|ing)?\b",
-    r"\bcheckout\b",
-    r"\bbook(ing)?\b",
-    r"\breserv(e|ation)\b",
-    r"\bflight ticket\b",
-    r"\bhotel\b",
-    r"\bsend (an? )?(email|message|dm|whatsapp)\b",
-    r"\bapply(ing)? (for|to)\b",
-    r"\bjob application\b",
-    r"\bdelete\b",
-    r"\bremove account\b",
-    r"\bchange (my )?(password|email|settings)\b",
-    r"\bshare (my )?(personal|private)\b",
-    r"\bcredit card\b",
-    r"\bcvv\b",
-    r"\bssn\b",
-    r"\baadhaar\b",
-    r"\bpan card\b",
+# Direct destructive/payment commitment actions that require explicit human approval
+COMMIT_PAYMENT_PATTERNS = (
+    r"\b(pay now|confirm payment|authorize payment|process payment)\b",
+    r"\b(charge my (card|account))\b",
+    r"\b(complete (purchase|booking|checkout))\b",
+    r"\b(enter (my )?credit card|(cvv|cvc)|card details)\b",
+    r"\b(delete (my )?(account|profile|database))\b",
+    r"\b(send (an? )?(email|message|whatsapp) to \S+)\b",
 )
 
 SAFETY_INSTRUCTIONS = """
 You are a personal browser assistant running on the user's Windows laptop.
 
-Hard rules:
+Capabilities & General Browsing:
 - Drive a real visible Chromium browser. Prefer the existing open tabs.
-- Complete ordinary browsing: search, navigate, click, read, extract, compare, fill ordinary forms.
+- Complete all requested browsing: media playback, searches, flights, food, shopping, reading, extracting information, comparing options, and navigating any website across the internet.
+- Never refuse ordinary browsing, search, media playback, or site exploration.
 - If login is required, pause and tell the user to log in manually in the open browser, then continue after they confirm.
 - Never bypass CAPTCHA, DRM, paywalls, or website security controls.
-- Never store, print, or request passwords or authentication tokens in plain text.
-- Never claim a sensitive action completed unless the website actually confirmed it.
-- Before purchasing, booking flights/hotels, paying, sending emails/messages, submitting job applications, deleting data, changing account settings, or sharing personal information: call request_human_approval. If approval is denied, stop that action and report that you did not do it.
-- Do not invent search results, prices, or match listings. Report only what you actually saw on the page.
-- When finished, summarize what you did, the important facts you found, and any blockers.
+- Never store, print, or request passwords or financial card credentials in plain text.
+
+Sensitive Action Approvals:
+- Before executing a final irrevocable purchase payment, submitting a live job application form, or permanently deleting user data: call request_human_approval.
+- Ordinary searching, viewing flight options, browsing restaurant menus, and playing videos do NOT require pre-approval.
+
+Summary:
+- When finished, summarize what you did and the facts you saw on the page clearly and concisely.
 """.strip()
 
 
 def looks_sensitive(instruction: str) -> bool:
-    text = instruction.lower()
-    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in SENSITIVE_PATTERNS)
+    """Returns True ONLY for direct financial commitments or destructive actions.
+
+    Ordinary searches (flights, food, shopping, media, browsing) return False.
+    """
+    text = (instruction or "").strip().lower()
+
+    # Safe discovery, browsing, searching, and playback verbs
+    if re.match(r"^(search|find|show|check|compare|list|look for|view|read|open|play|listen|watch|explore|browse)\b", text):
+        return False
+
+    return any(re.search(pattern, text, flags=re.IGNORECASE) for pattern in COMMIT_PAYMENT_PATTERNS)
