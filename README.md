@@ -438,23 +438,6 @@ To contribute:
 
 Please include relevant reproduction steps when reporting bugs.
 
----
-
-## License
-
-This project is distributed under the MIT License. See the `LICENSE` file for details.
-
----
-
-## Author
-
-**YOUR NAME**
-
-B.Tech — Artificial Intelligence and Data Science
-
-GitHub: https://github.com/ritikyadav.io
-
-LinkedIn: https://www.linkedin.com/in/ritikyadav18
 
 ---
 
