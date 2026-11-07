@@ -3,9 +3,16 @@ from __future__ import annotations
 import json
 import os
 import re
-from typing import Any
-
-from job_agent.config import gemini_api_key, gemini_is_configured, load_profile, read_master_resume
+from job_agent.config import (
+    gemini_api_key,
+    gemini_is_configured,
+    groq_api_key,
+    groq_is_configured,
+    load_profile,
+    openrouter_api_key,
+    openrouter_is_configured,
+    read_master_resume,
+)
 
 ENTRY_HINTS = (
     "fresher",
@@ -206,12 +213,8 @@ def heuristic_match(job: dict[str, Any], profile: dict[str, Any] | None = None, 
     }
 
 
-def _gemini_match(job: dict[str, Any], profile: dict[str, Any], resume_text: str) -> dict[str, Any] | None:
-    if not gemini_is_configured():
-        return None
-    from google import genai
-
-    prompt = {
+def _build_match_prompt(job: dict[str, Any], profile: dict[str, Any], resume_text: str) -> dict[str, Any]:
+    return {
         "instructions": (
             "Compare the job with the candidate profile and master resume. "
             "Return JSON only. Do not invent skills, projects, internships or experience. "
@@ -251,6 +254,68 @@ def _gemini_match(job: dict[str, Any], profile: dict[str, Any], resume_text: str
             "reasons_reject": [],
         },
     }
+
+
+def _groq_match(prompt: dict[str, Any]) -> dict[str, Any] | None:
+    if not groq_is_configured():
+        return None
+    from groq import Groq
+
+    client = Groq(api_key=groq_api_key(), timeout=15.0)
+    model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
+    resp = client.chat.completions.create(
+        model=model,
+        messages=[
+            {
+                "role": "system",
+                "content": "You are an ATS job matcher. Compare the profile to the job. Output strict JSON only matching output_schema.",
+            },
+            {"role": "user", "content": json.dumps(prompt, ensure_ascii=False)},
+        ],
+        response_format={"type": "json_object"},
+    )
+    text = (resp.choices[0].message.content or "").strip()
+    data = json.loads(text)
+    data["method"] = f"groq ({model})"
+    return data
+
+
+def _openrouter_match(prompt: dict[str, Any]) -> dict[str, Any] | None:
+    if not openrouter_is_configured():
+        return None
+    import httpx
+
+    key = openrouter_api_key()
+    model = os.getenv("OPENROUTER_MODEL", "nvidia/nemotron-3.5-super-vl:free")
+    resp = httpx.post(
+        "https://openrouter.ai/api/v1/chat/completions",
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
+        json={
+            "model": model,
+            "messages": [
+                {
+                    "role": "system",
+                    "content": "You are an ATS job matcher. Compare the profile to the job. Output strict JSON only matching output_schema.",
+                },
+                {"role": "user", "content": json.dumps(prompt, ensure_ascii=False)},
+            ],
+            "response_format": {"type": "json_object"},
+        },
+        timeout=30.0,
+    )
+    resp.raise_for_status()
+    payload = resp.json()
+    content = payload["choices"][0]["message"]["content"]
+    data = json.loads(content)
+    data["method"] = f"openrouter ({model})"
+    return data
+
+
+def _gemini_api_match(prompt: dict[str, Any]) -> dict[str, Any] | None:
+    if not gemini_is_configured():
+        return None
+    from google import genai
+
     client = genai.Client(api_key=gemini_api_key())
     model = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     response = client.models.generate_content(
@@ -264,6 +329,41 @@ def _gemini_match(job: dict[str, Any], profile: dict[str, Any], resume_text: str
     return data
 
 
+def _llm_match(job: dict[str, Any], profile: dict[str, Any], resume_text: str) -> dict[str, Any] | None:
+    prompt = _build_match_prompt(job, profile, resume_text)
+
+    # 1. Try Groq (primary, ultra-fast)
+    try:
+        data = _groq_match(prompt)
+        if data:
+            return data
+    except Exception:
+        pass
+
+    # 2. Try OpenRouter (secondary)
+    try:
+        data = _openrouter_match(prompt)
+        if data:
+            return data
+    except Exception:
+        pass
+
+    # 3. Try Gemini (tertiary)
+    try:
+        data = _gemini_api_match(prompt)
+        if data:
+            return data
+    except Exception:
+        pass
+
+    return None
+
+
+def _gemini_match(job: dict[str, Any], profile: dict[str, Any], resume_text: str) -> dict[str, Any] | None:
+    """Backward-compatible wrapper; executes multi-tier LLM match."""
+    return _llm_match(job, profile, resume_text)
+
+
 def analyze_job(job: dict[str, Any], profile: dict[str, Any] | None = None, use_gemini: bool = True) -> dict[str, Any]:
     profile = profile or load_profile()
     resume_text = read_master_resume(profile)
@@ -271,11 +371,11 @@ def analyze_job(job: dict[str, Any], profile: dict[str, Any] | None = None, use_
     if not use_gemini:
         return base
     try:
-        gemini = _gemini_match(job, profile, resume_text)
+        llm_result = _llm_match(job, profile, resume_text)
     except Exception as exc:
-        base["gemini_error"] = type(exc).__name__
+        base["llm_error"] = type(exc).__name__
         return base
-    if not gemini:
+    if not llm_result:
         return base
 
     merged = dict(base)
@@ -292,12 +392,12 @@ def analyze_job(job: dict[str, Any], profile: dict[str, Any] | None = None, use_
         "reasons_apply",
         "reasons_reject",
     ):
-        if gemini.get(key) not in (None, "", []):
-            merged[key] = gemini[key]
+        if llm_result.get(key) not in (None, "", []):
+            merged[key] = llm_result[key]
     try:
         merged["match_percent"] = max(0, min(100, int(merged.get("match_percent") or 0)))
     except (TypeError, ValueError):
         merged["match_percent"] = base["match_percent"]
     merged["grade"], merged["priority"] = classify_match(int(merged["match_percent"]))
-    merged["method"] = "gemini+heuristic"
+    merged["method"] = llm_result.get("method", "llm") + "+heuristic"
     return merged

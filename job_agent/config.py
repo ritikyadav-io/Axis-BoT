@@ -48,6 +48,24 @@ def load_environment() -> None:
         os.environ["GOOGLE_API_KEY"] = gemini_key
 
 
+def groq_api_key() -> str:
+    return (os.getenv("GROQ_API_KEY") or "").strip()
+
+
+def groq_is_configured() -> bool:
+    key = groq_api_key()
+    return bool(key) and key.lower() not in {"your_groq_api_key_here", "your-key", "changeme"}
+
+
+def openrouter_api_key() -> str:
+    return (os.getenv("OPENROUTER_API_KEY") or "").strip()
+
+
+def openrouter_is_configured() -> bool:
+    key = openrouter_api_key()
+    return bool(key) and key.lower() not in {"your_openrouter_api_key_here", "your-key", "changeme"}
+
+
 def gemini_api_key() -> str:
     return (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
 
@@ -55,6 +73,7 @@ def gemini_api_key() -> str:
 def gemini_is_configured() -> bool:
     key = gemini_api_key()
     return bool(key) and key.lower() not in {"your_gemini_api_key_here", "your-key", "changeme"}
+
 
 
 def describe_secret(name: str) -> str:

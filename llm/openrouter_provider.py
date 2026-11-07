@@ -3,7 +3,14 @@ from __future__ import annotations
 from typing import Any
 
 from config import is_configured, openrouter_api_key, openrouter_chat_model, validate_chat_model
-from llm.provider import CREDITS_MESSAGE, NON_RETRYABLE_KINDS, ProviderCallError, ProviderConfigError, classify_provider_error
+from llm.provider import (
+    CREDITS_MESSAGE,
+    NON_RETRYABLE_KINDS,
+    ProviderCallError,
+    ProviderConfigError,
+    classify_provider_error,
+    safe_print,
+)
 
 
 class FailFastChatModel:
@@ -35,15 +42,15 @@ class FailFastChatModel:
         self._announced = True
         model = getattr(self._inner, "model", "the configured model")
         if error.kind == "unavailable":
-            print(f"\n❌ Model unavailable (HTTP 404): {model}")
-            print("OpenRouter reports this chat model is missing, renamed, or withdrawn.")
-            print("Update OPENROUTER_MODEL in .env to a current chat/instruct model. I will not retry this model.")
+            safe_print(f"\n❌ Model unavailable (HTTP 404): {model}")
+            safe_print("OpenRouter reports this chat model is missing, renamed, or withdrawn.")
+            safe_print("Update OPENROUTER_MODEL in .env to a current chat/instruct model. I will not retry this model.")
             return
         if error.kind == "credits":
-            print(f"\n❌ {CREDITS_MESSAGE}")
-            print("The configured free chat model was not changed. I will not retry this request.")
+            safe_print(f"\n❌ {CREDITS_MESSAGE}")
+            safe_print("The configured free chat model was not changed. I will not retry this request.")
             return
-        print(f"\n❌ Provider error ({error.kind}): {error}")
+        safe_print(f"\n❌ Provider error ({error.kind}): {error}")
 
     async def ainvoke(self, *args: Any, **kwargs: Any):
         if self._fatal is not None:

@@ -20,7 +20,23 @@ def load_environment() -> None:
         os.environ["GOOGLE_API_KEY"] = gemini_key
     os.environ.setdefault("BROWSER_USE_HEADLESS", "false")
     os.environ.setdefault("ANONYMIZED_TELEMETRY", "false")
-    os.environ.setdefault("LLM_PROVIDER", "openrouter")
+    os.environ.setdefault("LLM_PROVIDER", "groq")
+    os.environ.setdefault("FALLBACK_PROVIDER", "openrouter")
+    os.environ.setdefault("TERTIARY_PROVIDER", "gemini")
+
+
+def update_env_value(key: str, value: str) -> None:
+    """Updates or adds an environment variable in the .env file and in os.environ."""
+    env_file = PROJECT_ROOT / ".env"
+    text = env_file.read_text(encoding="utf-8") if env_file.exists() else ""
+    pattern = rf"^{re.escape(key)}=.*$"
+    new_line = f"{key}={value}"
+    if re.search(pattern, text, flags=re.MULTILINE):
+        updated = re.sub(pattern, new_line, text, flags=re.MULTILINE)
+    else:
+        updated = text.rstrip() + f"\n{new_line}\n"
+    env_file.write_text(updated, encoding="utf-8")
+    os.environ[key] = value
 
 
 def _secret(name: str) -> str:
@@ -44,11 +60,26 @@ def is_embedding_model(model: str) -> bool:
 
 
 def llm_provider_name() -> str:
-    return (os.getenv("LLM_PROVIDER") or "openrouter").strip().lower() or "openrouter"
+    return (os.getenv("LLM_PROVIDER") or "groq").strip().lower() or "groq"
 
 
 def fallback_provider_name() -> str:
-    return (os.getenv("FALLBACK_PROVIDER") or "").strip().lower()
+    return (os.getenv("FALLBACK_PROVIDER") or "openrouter").strip().lower()
+
+
+def tertiary_provider_name() -> str:
+    return (os.getenv("TERTIARY_PROVIDER") or "gemini").strip().lower()
+
+
+def groq_api_key() -> str:
+    return _secret("GROQ_API_KEY")
+
+
+DEFAULT_GROQ_CHAT_MODEL = "openai/gpt-oss-120b"
+
+
+def groq_model() -> str:
+    return (os.getenv("GROQ_MODEL") or DEFAULT_GROQ_CHAT_MODEL).strip()
 
 
 def openrouter_api_key() -> str:
@@ -87,15 +118,13 @@ def validate_chat_model(model: str, provider: str) -> str | None:
 
 def startup_summary() -> list[str]:
     lines = [
-        f"LLM provider: {llm_provider_name()}",
-        f"OpenRouter key: {describe_secret('OPENROUTER_API_KEY')}",
-        f"OpenRouter chat model: {openrouter_chat_model()}",
-        f"OpenRouter embedding model: {openrouter_embedding_model()} (not used for browsing)",
-        f"Gemini key: {describe_secret('GEMINI_API_KEY') if is_configured('GEMINI_API_KEY') else describe_secret('GOOGLE_API_KEY')}",
-        f"Gemini model: {gemini_model()}",
-        f"Fallback provider: {fallback_provider_name() or 'disabled'}",
+        f"Active LLM: {llm_provider_name()} (1st) -> {fallback_provider_name() or 'none'} (2nd) -> {tertiary_provider_name() or 'none'} (3rd)",
+        f"Groq key: {describe_secret('GROQ_API_KEY')} | model: {groq_model()}",
+        f"OpenRouter key: {describe_secret('OPENROUTER_API_KEY')} | model: {openrouter_chat_model()}",
+        f"Gemini key: {describe_secret('GEMINI_API_KEY') if is_configured('GEMINI_API_KEY') else describe_secret('GOOGLE_API_KEY')} | model: {gemini_model()}",
     ]
     warning = validate_chat_model(openrouter_chat_model(), "openrouter")
     if warning:
         lines.append("Config warning: " + warning)
     return lines
+

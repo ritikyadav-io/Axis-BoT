@@ -295,8 +295,8 @@ async def run_browser_task(instruction: str, llm, browser_session, tools, crash_
         final_response_after_failure=False,
         max_actions_per_step=3 if parsed.simple else 4,
         max_history_items=6,
-        step_timeout=90,
-        llm_timeout=60,
+        step_timeout=45,
+        llm_timeout=45,
         directly_open_url=True,
         loop_detection_enabled=True,
         llm_screenshot_size=(896, 504),
@@ -433,11 +433,24 @@ async def interactive_loop() -> None:
                 try:
                     llm = build_llm()
                     from config import llm_provider_name
-                    from llm.openrouter_provider import probe_openrouter_account
 
-                    if llm_provider_name() == "openrouter":
-                        probe_openrouter_account()
-                        print("OpenRouter configuration check: key accepted (value hidden).")
+                    active_p = llm_provider_name()
+                    if active_p == "groq":
+                        try:
+                            from llm.groq_provider import probe_groq_account
+
+                            probe_groq_account()
+                            print("Groq configuration check: key accepted (value hidden).")
+                        except Exception as p_err:
+                            print(f"Groq probe notice: {p_err}")
+                    elif active_p == "openrouter":
+                        try:
+                            from llm.openrouter_provider import probe_openrouter_account
+
+                            probe_openrouter_account()
+                            print("OpenRouter configuration check: key accepted (value hidden).")
+                        except Exception as p_err:
+                            print(f"OpenRouter probe notice: {p_err}")
                 except ProviderConfigError as exc:
                     print(str(exc))
                     llm = None
