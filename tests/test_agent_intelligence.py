@@ -38,6 +38,33 @@ class NaturalLanguageTests(unittest.TestCase):
         self.assertEqual(task.kind, "google_search")
         self.assertIn("sql interview questions", task.expanded.lower())
 
+    def test_play_song_on_youtube(self) -> None:
+        task = normalize_instruction("play baaki song on youtube")
+        self.assertEqual(task.kind, "play_media")
+        self.assertFalse(task.simple)
+        self.assertIn("baaki song", task.expanded.lower())
+        self.assertIn("youtube.com", task.expanded.lower())
+        self.assertIsNone(task.ambiguous)
+
+    def test_play_song_defaults_to_youtube(self) -> None:
+        task = normalize_instruction("play baaki song")
+        self.assertEqual(task.kind, "play_media")
+        self.assertFalse(task.simple)
+        self.assertIn("baaki song", task.expanded.lower())
+        self.assertIn("youtube.com", task.expanded.lower())
+        self.assertIsNone(task.ambiguous)
+
+    def test_yoyutbe_typo_resolution(self) -> None:
+        task = normalize_instruction("play baaki song on yoyutbe")
+        self.assertEqual(task.kind, "play_media")
+        self.assertIn("youtube.com", task.expanded.lower())
+        self.assertIsNone(task.ambiguous)
+
+    def test_any_site_navigation_without_ambiguous(self) -> None:
+        task = normalize_instruction("dinotube")
+        self.assertIsNone(task.ambiguous)
+        self.assertIn("dinotube", task.expanded.lower())
+
 
 class RecoveryTests(unittest.TestCase):
     def test_identical_failure_stops_on_second_try(self) -> None:
