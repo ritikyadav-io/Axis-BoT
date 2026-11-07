@@ -1,264 +1,461 @@
-# Axis-BoT
+# AXIS BOT
 
-Personal AI Browser Agent
+### A Local-First Personal AI Agent for Browser Automation and Workflow Execution
 
-This project is a local assistant that takes plain-English instructions, plans them with an LLM, and carries them out in a real Chromium window using Browser Use and Playwright.
+AXIS BOT is a Python-based personal AI agent designed to interpret natural-language instructions and execute browser-based tasks through an automated browser environment.
 
-The default LLM provider is **OpenRouter**. Gemini remains optional. Embeddings are a separate module and are never used to drive the browser.
+It combines large language models, browser automation and task-oriented workflows to help reduce repetitive manual work. The system supports local model execution through Ollama, with optional cloud-based LLM providers.
 
-It is not a chatbot that only talks. It opens websites, clicks, searches, reads pages, and reports what it actually found.
+The project also includes a career automation module focused on job discovery, job matching and application tracking.
 
-## Architecture
+---
 
-1. You type a task in the terminal.
-2. `run_agent.py` loads `.env` and builds the chat model from `LLM_PROVIDER`.
-3. Browser Use sends the task to OpenRouter (`ChatOpenRouter`) or Gemini (`ChatGoogle`).
-4. The chat model chooses browser actions (tool/function calling).
-5. Playwright-backed Chromium carries out those actions in a visible window.
-6. The agent prints a result, then asks for the next task.
-7. The same browser window stays open between tasks whenever Browser Use allows it.
+## Overview
 
-Sensitive work (payments, bookings, emails, job applications, deletions, account changes) needs your explicit YES. The agent must not bypass CAPTCHA, DRM, paywalls, or site security.
+Most browser automation tools require users to define every action in advance. AXIS BOT explores a more flexible approach: users describe what they want to accomplish, and the agent determines the actions required to complete the task.
 
-## Requirements already used in this workspace
+For example, a user can request a website search, information extraction or a multi-step browser workflow using ordinary language.
 
-- Windows 11
-- Python 3.12 inside `.venv` (do not use the system Python 3.11)
-- `browser-use` 0.13.14
-- Playwright 1.64.1 with Chromium
-- `python-dotenv` and `httpx`
-- An OpenRouter API key (Gemini is optional)
+The agent processes the instruction, interacts with the browser, collects relevant information and returns the result.
+
+The project is designed around modularity, configurable language models and controlled automation.
+
+## Core Capabilities
+
+### 1. AI-Powered Browser Automation
+
+- Execute browser tasks using natural-language instructions.
+- Navigate websites and perform web searches.
+- Interact with page elements through browser automation.
+- Extract and summarize information from webpages.
+- Support multi-step browser workflows.
+- Run browser sessions using Chromium.
+
+### 2. Local Language Model Integration
+
+AXIS BOT supports local AI inference through Ollama, allowing compatible language models to run on the user's own machine.
+
+Benefits include:
+
+- Local model execution.
+- Reduced dependency on external AI APIs.
+- No per-request cloud inference charges when using a local model.
+- Configurable model selection.
+- Greater control over model execution and data flow.
+
+### 3. Multiple LLM Providers
+
+The architecture is designed to support multiple language model providers.
+
+| Provider | Integration |
+|---|---|
+| Ollama | Local model inference |
+| OpenRouter | Cloud model access |
+| Google Gemini | Cloud model access |
+
+Provider availability depends on configuration and model compatibility with the agent framework.
+
+### 4. Task Execution and Recovery
+
+The agent is designed to handle multi-step instructions while maintaining task context.
+
+Planned and implemented reliability capabilities include:
+
+- Task-level execution tracking.
+- Error detection and controlled retries.
+- Prevention of repeated failed actions.
+- Browser state awareness.
+- Configurable execution timeouts.
+- Clear task completion and failure reporting.
+
+### 5. Career Automation
+
+The project includes a separate career automation workflow intended to assist with job searching and application management.
+
+Its intended capabilities include:
+
+- Discovering relevant job opportunities.
+- Extracting job descriptions and requirements.
+- Matching opportunities against a candidate profile.
+- Identifying relevant technical skills.
+- Tracking application status.
+- Providing a centralized dashboard.
+- Sending notifications when configured.
+
+### 6. Dashboard and Tracking
+
+A Streamlit-based dashboard provides an interface for career-related workflows and application tracking.
+
+The dashboard is intended to make job information and application progress easier to review and manage.
+
+---
+
+## Technology Stack
+
+| Category | Technology |
+|---|---|
+| Programming Language | Python 3.12 |
+| AI Agent Framework | Browser Use |
+| Local LLM Runtime | Ollama |
+| Language Models | Qwen family and compatible models |
+| Browser Automation | Playwright |
+| Browser Engine | Chromium |
+| Cloud LLM Integration | OpenRouter, Google Gemini |
+| Dashboard | Streamlit |
+| Database | SQLite, where configured |
+| Environment Management | Python-dotenv |
+| Version Control | Git, GitHub |
+
+---
+
+## System Architecture
+
+AXIS BOT follows a modular architecture that separates language model configuration, task execution, browser interaction and career workflows.
+
+```text
+                   USER
+                     |
+                     v
+             Natural Language Input
+                     |
+                     v
+              Agent Controller
+                     |
+           +---------+---------+
+           |                   |
+           v                   v
+      LLM Provider        Task Context
+           |                   |
+     +-----+------+            |
+     |     |      |            |
+     v     v      v            |
+  Ollama OpenRouter Gemini     |
+     |     |      |            |
+     +-----+------+            |
+           |                   |
+           +---------+---------+
+                     |
+                     v
+              Browser Use Agent
+                     |
+                     v
+              Playwright Layer
+                     |
+                     v
+                 Chromium
+                     |
+                     v
+             Task Execution Results
+                     |
+          +----------+-----------+
+          |                      |
+          v                      v
+      User Output          Career Workflows
+                                 |
+                         +-------+-------+
+                         |       |       |
+                         v       v       v
+                       Jobs   Matching Tracker
+                                 |
+                                 v
+                              Dashboard
+```
+
+---
 
 ## Installation
 
-If the virtual environment and packages are already present, skip reinstalling.
+### Prerequisites
 
-```powershell
-cd C:\Users\prime\browser-agent
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe -m playwright install chromium
+Before installing AXIS BOT, ensure the following software is available:
+
+- Python 3.12
+- Git
+- Ollama (for local model execution)
+- A compatible Chromium installation through Playwright
+- Windows 10/11 or another supported operating system
+
+A machine with 16 GB RAM is a reasonable starting point for experimenting with smaller quantized local models. Actual requirements depend on model size and configuration.
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/YOUR_USERNAME/axis-bot.git
+
+cd axis-bot
 ```
 
-## OpenRouter configuration (primary)
+### 2. Create a virtual environment
 
-1. Create a key at https://openrouter.ai/keys
-2. Open `.env` in this folder (copy from `.env.example` if needed).
-3. Set:
+Windows:
 
-```text
-LLM_PROVIDER=openrouter
-FALLBACK_PROVIDER=
-OPENROUTER_API_KEY=
-OPENROUTER_MODEL=nvidia/nemotron-3.5-super-vl:free
-OPENROUTER_EMBEDDING_MODEL=nvidia/nemotron-3.5-embed-1b:free
+```bash
+py -3.12 -m venv .venv
 ```
 
-4. Save the file. Never commit `.env`. Never paste keys into chat.
-
-`OPENROUTER_MODEL` must be a **chat/instruct** model that can do tool or JSON-schema calls. Browser Use 0.13 uses OpenRouter's OpenAI-compatible chat API at `https://openrouter.ai/api/v1`.
-
-Do **not** put `nvidia/nemotron-3.5-embed-1b:free` in `OPENROUTER_MODEL`. That is an embedding model. The agent will refuse to use it for browsing.
-
-Free OpenRouter models can be rate-limited, missing tool-calling, or withdrawn. If a model fails with "unavailable" or structured-output errors, pick another chat model on https://openrouter.ai/models and update `OPENROUTER_MODEL`.
-
-## Embedding model (optional, not used for browsing)
-
-`OPENROUTER_EMBEDDING_MODEL=nvidia/nemotron-3.5-embed-1b:free` is only for future job-search text similarity.
-
-Dry run:
-
-```powershell
-.\.venv\Scripts\python.exe examples\generate_embedding.py --dry-run
-```
-
-One live embedding call (ask before using this if you are counting credits):
-
-```powershell
-.\.venv\Scripts\python.exe examples\generate_embedding.py --live
-```
-
-Normal `python run_agent.py` navigation does not call the embeddings API.
-
-## Gemini configuration (optional)
-
-1. Create a key at https://aistudio.google.com/app/apikey
-2. Set `GEMINI_API_KEY=` and `GEMINI_MODEL=gemini-2.5-flash` in `.env`.
-3. Switch with `LLM_PROVIDER=gemini`.
-
-Browser Use reads `GOOGLE_API_KEY`. This project copies `GEMINI_API_KEY` into `GOOGLE_API_KEY` automatically.
-
-Fallback is **off** unless you set `FALLBACK_PROVIDER=gemini` (or `openrouter`). The agent will not silently switch providers.
-
-Optional agent settings:
-
-- `AGENT_MAX_STEPS` default `40`
-- `AGENT_TASK_TIMEOUT` default `600` seconds (covers the live task, not hung Browser Use cleanup)
-
-## Activate the virtual environment
-
-PowerShell:
-
-```powershell
-cd C:\Users\prime\browser-agent
-.\.venv\Scripts\Activate.ps1
-```
-
-Command Prompt:
+Activate the environment:
 
 ```cmd
-cd C:\Users\prime\browser-agent
-.venv\Scripts\activate.bat
+.venv\Scripts\activate
 ```
 
-If activation is blocked in PowerShell, you can skip it and call `.venv\Scripts\python.exe` directly.
+### 3. Install dependencies
 
-## How to run
+```bash
+python -m pip install --upgrade pip
 
-```powershell
-cd C:\Users\prime\browser-agent
-.\.venv\Scripts\python.exe run_agent.py
+pip install -r requirements.txt
 ```
 
-Or, after activating `.venv`:
+### 4. Install browser dependencies
 
-```powershell
+Install Chromium through the Playwright installation process:
+
+```bash
+python -m playwright install chromium
+```
+
+### 5. Install Ollama
+
+Download and install Ollama:
+
+https://ollama.com/download
+
+Verify the installation:
+
+```bash
+ollama --version
+```
+
+### 6. Download a language model
+
+For the initial local setup:
+
+```bash
+ollama pull qwen3:4b
+```
+
+Verify that the model is available:
+
+```bash
+ollama list
+```
+
+Start the model:
+
+```bash
+ollama run qwen3:4b
+```
+
+Model compatibility with Browser Use tool calling should be verified before using it for browser automation.
+
+### 7. Configure environment variables
+
+Create a local `.env` file using `.env.example` as the template.
+
+Example local configuration:
+
+```env
+LLM_PROVIDER=ollama
+
+OLLAMA_BASE_URL=http://localhost:11434/v1
+OLLAMA_MODEL=qwen3:4b
+
+AGENT_TASK_TIMEOUT=600
+```
+
+For optional cloud providers, configure the corresponding API credentials in `.env`.
+
+Do not commit API keys, credentials or private configuration files to GitHub.
+
+### 8. Run AXIS BOT
+
+Ensure Ollama is running and the selected model is available.
+
+Start the application:
+
+```bash
 python run_agent.py
 ```
 
-You should see:
+The agent should start its interactive command interface.
+
+---
+
+## Usage
+
+AXIS BOT accepts natural-language instructions through its terminal interface.
+
+Example commands:
 
 ```text
-👉 What should I do?
+Open Google and search for Python tutorials.
 ```
-
-Examples:
 
 ```text
-Open Google and search for the top 10 Data Engineer jobs in India.
-Open YouTube and search for Python tutorials.
-Open Hotstar and navigate to the live India cricket match.
-Find three affordable flights from Jaipur to Mumbai and compare prices.
+Search for junior Data Engineer jobs in India.
 ```
 
-The first real task opens Chromium. You can log into websites yourself in that window when a site asks for a password.
-
-## How to stop
-
-- Type `exit` or `quit`
-- Or press `Ctrl+C`
-
-The program then closes the Chromium session.
-
-## Environment check
-
-```powershell
-.\.venv\Scripts\python.exe run_agent.py --self-test
+```text
+Find SQL interview questions and summarize the important topics.
 ```
 
-This checks Python 3.12, imports, Browser Use classes (`ChatOpenRouter` and `ChatGoogle`), OpenRouter/Gemini config (without printing keys), Chromium visit to https://example.com, and a Google search page load **without** calling the LLM. It does not spend OpenRouter or Gemini quota.
-
-Unit tests (mocked 429 / invalid key, embedding vs chat guards):
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest tests.test_llm_errors
+```text
+Open a website and extract its key information.
 ```
 
-## Common errors
+The available actions depend on the configured model, browser tools and website requirements.
 
-**OpenRouter key missing or invalid**
-Open `.env`, set `OPENROUTER_API_KEY`, save, then run the agent again. Create a key at https://openrouter.ai/keys. The program never prints the key.
+---
 
-**Embedding model used as chat model**
-`nvidia/nemotron-3.5-embed-1b:free` cannot drive Browser Use. Keep it in `OPENROUTER_EMBEDDING_MODEL` only. Use a chat model in `OPENROUTER_MODEL`.
+## Configuration
 
-**Rate limit / 429**
-Free OpenRouter models are shared. Wait and retry a smaller task. The agent uses short retries, not an infinite loop.
+The application supports configurable LLM providers.
 
-**Insufficient credits / 402**
-Add OpenRouter credits or switch to a `:free` chat model.
+| Setting | Description |
+|---|---|
+| `LLM_PROVIDER` | Selects the active language model provider |
+| `OLLAMA_BASE_URL` | Local Ollama API endpoint |
+| `OLLAMA_MODEL` | Selected local model |
+| `OPENROUTER_API_KEY` | OpenRouter authentication |
+| `OPENROUTER_MODEL` | Selected OpenRouter model |
+| `GEMINI_API_KEY` | Google Gemini authentication |
+| `GEMINI_MODEL` | Selected Gemini model |
+| `AGENT_TASK_TIMEOUT` | Maximum task execution time |
 
-**Gemini quota exhausted**
-If `LLM_PROVIDER=gemini` and Google returns a daily quota error, stop. The agent will not keep retrying and will not silently switch to OpenRouter unless `FALLBACK_PROVIDER` is set.
+Only configure the providers you intend to use.
 
-**Model not found**
-For OpenRouter, pick a live chat model from https://openrouter.ai/models. For Gemini, `GEMINI_MODEL=gemini-2.5-flash` is the verified default.
+---
 
-**Chromium did not open**
-Run `.\.venv\Scripts\python.exe -m playwright install chromium`. Close other stuck Chrome debug sessions if you see profile-lock errors.
+## Project Structure
 
-**`python` is 3.11**
-Windows also has Python 3.11. Always use `.venv\Scripts\python.exe`, which is 3.12.0.
+The following represents the intended logical organization. Refer to the actual repository for the current implementation.
 
-**Timeout**
-Raise `AGENT_TASK_TIMEOUT` in `.env`, or give a smaller task.
-
-**Hotstar / YouTube / airline sites ask for login**
-Log in by hand in the open browser, then tell the agent to continue. Do not paste passwords into the terminal.
-
-**CAPTCHA or paywall**
-The agent must stop and ask you to complete that step. It is not allowed to bypass those controls.
-
-## Personal AI Job Hunting Agent
-
-This is an add-on. `run_agent.py` still launches the original browser agent.
-
-The job-hunting package lives in `job_agent/`. It discovers public listings, stores them in SQLite, scores them against `config/profile.json`, writes ATS-style resumes from facts you approved, and never submits an application unless you say yes.
-
-### Edit your profile
-
-Open `config/profile.json` (or the dashboard Settings page). Add your name, email, phone, city, projects and internships. Empty fields stay empty. The agent will not invent experience.
-
-Master resume: `resumes/master/master_resume.md`
-
-### Dashboard
-
-```powershell
-cd C:\Users\prime\browser-agent
-.\.venv\Scripts\python.exe -m streamlit run dashboard/app.py
+```text
+axis-bot/
+|
+|-- agent/
+|   |-- browser_agent.py
+|   |-- safety.py
+|   |-- memory.py
+|
+|-- llm/
+|   |-- provider.py
+|   |-- ollama_provider.py
+|   |-- openrouter_provider.py
+|   |-- gemini_provider.py
+|
+|-- job_agent/
+|   |-- discovery.py
+|   |-- matching.py
+|   |-- tracker.py
+|   |-- notifications.py
+|
+|-- dashboard/
+|   |-- app.py
+|
+|-- tests/
+|
+|-- .env.example
+|-- .gitignore
+|-- requirements.txt
+|-- run_agent.py
+|-- README.md
+|-- LICENSE
 ```
 
-The older command `python -m streamlit run job_agent/dashboard.py` still works.
+---
 
-Pages: Overview, Discover Jobs, Recommended Jobs, Job Details, Resume Manager, ATS Analyzer, Application Assistant, Application Tracker, Interview Tracker, Notifications, Settings.
+## Security and Responsible Automation
 
-### One-shot discovery
+AXIS BOT is designed to keep users in control of sensitive browser operations.
 
-```powershell
-.\.venv\Scripts\python.exe -m job_agent discover
+The system should request explicit user confirmation before:
+
+- Submitting job applications.
+- Sending emails or messages.
+- Making purchases or payments.
+- Booking appointments.
+- Changing account settings.
+- Sharing personal information.
+
+The agent must not bypass CAPTCHA, authentication protections, paywalls or website security controls.
+
+Users are responsible for complying with the terms and policies of websites they access.
+
+Local model execution does not automatically guarantee that all application data stays local. Users should review the behavior of connected services and integrations.
+
+---
+
+## Development Roadmap
+
+The following areas represent ongoing development priorities.
+
+- [ ] Reliable local LLM integration.
+- [ ] Improved natural-language instruction handling.
+- [ ] More efficient browser task execution.
+- [ ] Better task memory and state management.
+- [ ] Improved error detection and recovery.
+- [ ] Job discovery and relevance matching.
+- [ ] Application tracking and dashboard improvements.
+- [ ] Notification reliability.
+- [ ] Automated test coverage.
+- [ ] Additional local model support.
+
+---
+
+## Testing
+
+Run the project's test suite using:
+
+```bash
+python -m pytest
 ```
 
-Public sources used when they respond: Indeed RSS, Remotive, Arbeitnow, RemoteOK, Internshala public pages, plus sample jobs. LinkedIn, Naukri and Wellfound are not scraped; the tool stores search URLs for you to open yourself.
+Individual integrations should also be tested independently, including:
 
-### Scheduler
+- LLM provider initialization.
+- Local Ollama connectivity.
+- Browser launch and shutdown.
+- Browser task execution.
+- Job discovery and matching.
+- Database operations.
+- Dashboard imports and functionality.
 
-Local checks run only while the laptop is on and the scheduler window stays open. For later 24/7 monitoring, run the same command on a cloud VM.
+---
 
-```powershell
-.\.venv\Scripts\python.exe -m job_agent.scheduler
-.\.venv\Scripts\python.exe -m job_agent.scheduler status
-.\.venv\Scripts\python.exe -m job_agent.scheduler stop
-```
+## Contributing
 
-Hours are in `config/schedule.json` (Asia/Kolkata by default).
+Contributions, bug reports and suggestions are welcome.
 
-### Assisted apply
+To contribute:
 
-```powershell
-.\.venv\Scripts\python.exe -m job_agent preview --job-id 1
-.\.venv\Scripts\python.exe -m job_agent approve --job-id 1
-.\.venv\Scripts\python.exe -m job_agent open --job-id 1
-.\.venv\Scripts\python.exe -m job_agent submit --job-id 1
-```
+1. Fork the repository.
+2. Create a feature branch.
+3. Implement and test your changes.
+4. Commit with a descriptive message.
+5. Submit a pull request.
 
-`submit` is refused unless that job was approved. CAPTCHA and login walls are not bypassed.
+Please include relevant reproduction steps when reporting bugs.
 
-### Telegram (optional)
+---
 
-In `.env` set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`. Leave them blank to keep notifications in the dashboard only.
+## License
 
-### Offline tests
+This project is distributed under the MIT License. See the `LICENSE` file for details.
 
-```powershell
-.\.venv\Scripts\python.exe -m job_agent.test_offline
-```
+---
 
+## Author
+
+**YOUR NAME**
+
+B.Tech — Artificial Intelligence and Data Science
+
+GitHub: https://github.com/YOUR_USERNAME
+
+LinkedIn: https://www.linkedin.com/in/YOUR_LINKEDIN_USERNAME/
+
+---
+
+*AXIS BOT is an independent development project exploring local-first AI, browser automation and practical agent-based workflows.*
